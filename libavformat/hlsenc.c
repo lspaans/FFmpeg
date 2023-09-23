@@ -1585,6 +1585,7 @@ static int hls_window(AVFormatContext *s, int last, VariantStream *vs)
             ret = 0;
         goto fail;
     }
+    av_dict_free(&options);
 
     for (en = vs->segments; en; en = en->next) {
         if (target_duration <= en->duration)
@@ -1635,8 +1636,11 @@ static int hls_window(AVFormatContext *s, int last, VariantStream *vs)
         ff_hls_write_end_list(byterange_mode ? hls->m3u8_out : vs->out);
 
     if (vs->vtt_m3u8_name) {
+        set_http_options(vs->avf, &options, hls);
         snprintf(temp_vtt_filename, sizeof(temp_vtt_filename), use_temp_file ? "%s.tmp" : "%s", vs->vtt_m3u8_name);
-        if ((ret = hlsenc_io_open(s, &hls->sub_m3u8_out, temp_vtt_filename, &options)) < 0) {
+        ret = hlsenc_io_open(s, &hls->sub_m3u8_out, temp_vtt_filename, &options);
+        av_dict_free(&options);
+        if (ret < 0) {
             if (hls->ignore_io_errors)
                 ret = 0;
             goto fail;
